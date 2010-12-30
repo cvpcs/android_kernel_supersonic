@@ -1174,6 +1174,9 @@ int gserial_setup(struct usb_gadget *g, unsigned count)
 	if (count == 0 || count > N_PORTS)
 		return -EINVAL;
 
+	if (gs_tty_driver)
+		return -EBUSY;
+
 	gs_tty_wq = create_singlethread_workqueue("gs_tty");
 	if (gs_tty_wq == 0)
 		return -ENOMEM;

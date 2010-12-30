@@ -63,8 +63,13 @@ enum {
 	USB_FUNCTION_FSYNC,
 	USB_FUNCTION_MTP,
 	USB_FUNCTION_MODEM,
+	USB_FUNCTION_ECM,
+	USB_FUNCTION_ACM,
 };
 
+#define PID_RNDIS		0x0ffe
+#define PID_ECM			0x0ff8
+#define PID_ACM			0x0ff4
 #ifdef CONFIG_USB_ANDROID_MTP
 #define MS_VENDOR_CODE	0x0b
 #define FEATURE_DESC_SIZE	64
@@ -439,6 +444,9 @@ int android_switch_function(unsigned func)
 		else if ((func & (1 << USB_FUNCTION_ADB)) &&
 			!strcmp(f->name, "adb"))
 			f->hidden = 0;
+		else if ((func & (1 << USB_FUNCTION_ACM)) &&
+			!strcmp(f->name, "acm"))
+			f->hidden = 0;
 		else if ((func & (1 << USB_FUNCTION_RNDIS)) &&
 			!strcmp(f->name, "ether"))
 			f->hidden = 0;
@@ -472,7 +480,7 @@ int android_switch_function(unsigned func)
 	/* We need to specify the COMM class in the device descriptor
 	* if we are using RNDIS.
 	*/
-	if (func & (1 << USB_FUNCTION_RNDIS))
+	if (product_id == PID_RNDIS || product_id == PID_ECM || product_id == PID_ACM)
 		dev->cdev->desc.bDeviceClass = USB_CLASS_COMM;
 	else
 		dev->cdev->desc.bDeviceClass = USB_CLASS_PER_INTERFACE;
@@ -516,6 +524,10 @@ void android_enable_function(struct usb_function *f, int enable)
 		}
 #endif
 
+		if (product_id == PID_ECM || product_id == PID_ACM)
+			dev->cdev->desc.bDeviceClass = USB_CLASS_COMM;
+		else
+			dev->cdev->desc.bDeviceClass = USB_CLASS_PER_INTERFACE;
 #ifdef CONFIG_USB_GADGET_MSM_72K
 	msm_hsusb_request_reset();
 #else

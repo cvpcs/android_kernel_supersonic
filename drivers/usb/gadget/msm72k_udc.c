@@ -49,6 +49,11 @@
 #ifdef CONFIG_USB_ACCESSORY_DETECT_BY_ADC
 #include <mach/htc_headset_mgr.h>
 #endif
+#include <linux/wakelock.h>
+#include <mach/perflock.h>
+
+static struct wake_lock vbus_idle_wake_lock;
+static struct perf_lock usb_perf_lock;
 
 static const char driver_name[] = "msm72k_udc";
 
@@ -1609,6 +1614,13 @@ static void usb_lpm_enter(struct usb_info *ui)
 	clk_set_rate(ui->ebi1clk, 0);
 	ui->in_lpm = 1;
 	spin_unlock_irqrestore(&ui->lock, iflags);
+
+	if (board_mfg_mode() == 1) {/*for MFG adb unstable in FROYO ROM*/
+		printk(KERN_INFO "usb: idle_wake_unlock and perf unlock\n");
+		wake_unlock(&vbus_idle_wake_lock);
+		if (is_perf_lock_active(&usb_perf_lock))
+			perf_unlock(&usb_perf_lock);
+	}
 }
 
 static void usb_lpm_exit(struct usb_info *ui)
@@ -1626,6 +1638,13 @@ static void usb_lpm_exit(struct usb_info *ui)
 		clk_enable(ui->otgclk);
 	usb_wakeup_phy(ui);
 	ui->in_lpm = 0;
+
+	if (board_mfg_mode() == 1) {/*for MFG adb unstable in FROYO ROM*/
+		printk(KERN_INFO "usb: idle_wake_lock and perf lock\n");
+		wake_lock(&vbus_idle_wake_lock);
+		if (!is_perf_lock_active(&usb_perf_lock))
+			perf_lock(&usb_perf_lock);
+	}
 }
 
 #ifdef CONFIG_USB_ACCESSORY_DETECT
@@ -2452,8 +2471,11 @@ static int msm72k_probe(struct platform_device *pdev)
 
 	/* initialize mfg serial number */
 
-	if (board_mfg_mode() == 1)
+	if (board_mfg_mode() == 1) {
 		use_mfg_serialno = 1;
+		wake_lock_init(&vbus_idle_wake_lock, WAKE_LOCK_IDLE, "usb_idle_lock");
+		perf_lock_init(&usb_perf_lock, PERF_LOCK_HIGHEST, "usb");
+	}
 	else
 		use_mfg_serialno = 0;
 	strncpy(mfg_df_serialno, "000000000000", strlen("000000000000"));

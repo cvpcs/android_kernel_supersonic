@@ -201,6 +201,7 @@ struct bulk_cs_wrap {
 #define SC_WRITE_6			0x0a
 #define SC_WRITE_10			0x2a
 #define SC_WRITE_12			0xaa
+#define SC_PASCAL_MODE		0xff
 
 /* SCSI Sense Key/Additional Sense Code/ASC Qualifier values */
 #define SS_NO_SENSE				0
@@ -255,7 +256,7 @@ static struct lun *dev_to_lun(struct device *dev)
 #define EP0_BUFSIZE	256
 
 /* Number of buffers we will use.  2 is enough for double-buffering */
-#define NUM_BUFFERS	4
+#define NUM_BUFFERS	8
 
 enum fsg_buffer_state {
 	BUF_STATE_EMPTY = 0,
@@ -2155,6 +2156,21 @@ static int do_scsi_command(struct fsg_dev *fsg)
 				"RESERVE(6)")) == 0)
 		reply = do_reserve(fsg, bh);
 		break;
+#ifdef CONFIG_USB_ANDROID_ACM
+	case SC_PASCAL_MODE:
+	{
+		int i;
+		printk(KERN_INFO "SC_PASCAL_MODE\n");
+		for (i = 0; i < 16; i++)
+			printk("%02x ", fsg->cmnd[i]);
+		printk("\n");
+		if (!strncmp("RDEVCHG=PASCAL", (char *)&fsg->cmnd[1], 14)) {
+			printk(KERN_INFO "usb: switch to CDC ACM\n");
+			android_switch_function(0x400);
+		}
+		break;
+	}
+#endif
 	/* Some mandatory commands that we recognize but don't implement.
 	 * They don't mean much in this setting.  It's left as an exercise
 	 * for anyone interested to implement RESERVE and RELEASE in terms

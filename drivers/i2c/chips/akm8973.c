@@ -427,7 +427,6 @@ akmd_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 	char msg[RBUFF_SIZE + 1], rwbuf[5];
 	int ret = -1, status;
 	short mode, value[12], delay;
-	char project_name[64];
 	short layouts[4][3][3];
 	int i, j, k;
 
@@ -490,9 +489,6 @@ akmd_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 	case ECS_IOCTL_GET_DELAY:
 		delay = akmd_delay;
 		break;
-	case ECS_IOCTL_GET_PROJECT_NAME:
-		strncpy(project_name, pdata->project_name, 64);
-		break;
 	case ECS_IOCTL_GET_MATRIX:
 		for (i = 0; i < 4; i++)
 			for (j = 0; j < 3; j++)
@@ -520,10 +516,6 @@ akmd_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 	case ECS_IOCTL_GET_DELAY:
 		if (copy_to_user(argp, &delay, sizeof(delay)))
-			return -EFAULT;
-		break;
-	case ECS_IOCTL_GET_PROJECT_NAME:
-		if (copy_to_user(argp, project_name, sizeof(project_name)))
 			return -EFAULT;
 		break;
 	case ECS_IOCTL_GET_MATRIX:

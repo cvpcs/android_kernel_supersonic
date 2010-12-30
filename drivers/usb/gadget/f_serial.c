@@ -819,7 +819,6 @@ static int serial_set_enabled(const char *val, struct kernel_param *kp)
 static int serial_get_enabled(char *buffer, struct kernel_param *kp)
 {
 	buffer[0] = '0' + !serial_function->hidden;
-	printk(KERN_INFO "%s: %d\n", __func__, buffer[0] - '0');
 	return 1;
 }
 module_param_call(serial_enabled, serial_set_enabled, serial_get_enabled, NULL, 0664);

@@ -91,5 +91,5 @@ extern void android_enable_function(struct usb_function *f, int enable);
 
 extern int android_get_model_id(void);
 
-
+extern int android_switch_function(unsigned func);
 #endif	/* __LINUX_USB_ANDROID_H */
